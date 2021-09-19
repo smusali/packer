@@ -1,0 +1,25 @@
+{
+  "name": "packaging",
+  "version": "1.0.0",
+  "description": "Solution for Packaging Problem Asked by Mobiquity Europe",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smusali/packaging.git"
+  },
+  "keywords": [],
+  "author": "Samir Musali <samir.musali@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/smusali/packaging/issues"
+  },
+  "homepage": "https://github.com/smusali/packaging#readme",
+  "devDependencies": {
+    "@types/node": "^16.9.2",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.4.3"
+  }
+}
