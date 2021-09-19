@@ -1,42 +1,46 @@
-const fs = require('fs');
+import * as fs from 'fs';
 
 export class Packer {
-    static pack(inputFile: string): string {
-        const packages = readAndParse(inputFile)
-        packages.forEach((package) => {
-            return calculate(package)
-        })
-        throw Error("Not implemented");
+    static pack(inputFile: string): any[] {
+        const pkgs = Packer.readAndParse(inputFile);
+        pkgs.forEach((pkg: any) => {
+            return null
+        });
+
+        return pkgs;
     }
 
-    static async readAndParse(inputFile: string): string[] {
+    static readAndParse(inputFile: string): string[] {
+        let rawData: string;
         try{
-            const rawData: string = await fs.readFile(inputFile, 'utf8')
+            rawData = fs.readFileSync(inputFile, 'utf8');
         } catch (exception) {
-            throw Error(`Unable to Parse ${inputFile}: ${exception}`)
+            throw Error(`Unable to Parse ${inputFile}: ${exception}`);
+        };
+
+        interface Pkg {
+          capacity: number,
+          weights: number[],
+          costs: number[]
         }
 
-        return rawData.split(')\n').reduce((packages, line) => {
-            const lineSplit = line.replace(/ /g, '').split(':(')
-            const package = {
+        return rawData.split(')\n').reduce((pkgs: any[], line: string) => {
+            const lineSplit: string[] = line.replace(/ /g, '').split(':(');
+            const pkg: Pkg = {
                 capacity: Number(lineSplit[0]),
                 weights: [],
                 costs: []
-            }
+            };
 
-            lineSplit[1].split(')(').map((item) => {
-                const itemSplit = item.split(',')
-                package.weights.push(Number(itemSplit[1]))
-                package.costs.push(Number(itemSplit[2].split('€')[1]))
-            })
+            lineSplit[1].split(')(').forEach((item: string) => {
+                const itemSplit: string[] = item.split(',');
+                pkg.weights.push(Number(itemSplit[1]));
+                pkg.costs.push(Number(itemSplit[2].split(')')[0].split('€')[1]));
+            });
 
-            packages.push(package)
-            return packages
+            pkgs.push(pkg);
+            return pkgs;
         }, [])
-    }
-
-    static calculate(package: any): any {
-
     }
 
 /*
@@ -188,8 +192,4 @@ export class Packer {
   }
 ]
 */
-
-    static calculate(parsedData: any): any {
-
-    }
 }
