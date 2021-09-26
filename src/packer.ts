@@ -110,5 +110,3 @@ export class Packer {
     return pickedItems.sort();
   }
 }
-
-console.log(Packer.pack('./resources/example_input'));

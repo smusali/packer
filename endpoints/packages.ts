@@ -1,8 +1,7 @@
-import {
-  Request,
-  Response
-} from 'express';
+import {Request, Response} from 'express';
+import * as fs from 'fs';
 
+import {Packer} from '../src/packer';
 import {Storage} from '../src/storage';
 import {
   jsonDataType,
@@ -12,6 +11,8 @@ import {
   storageType,
 } from '../src/types';
 
+const exampleInputFile: string = './resources/example_input';
+const expectedOutputFile: string = './resources/example_output';
 const storageFile: string = process.env.STORAGE || './resources/packages.json';
 const storage: storageType = new Storage('json', storageFile);
 
@@ -52,6 +53,45 @@ export class Packages {
   };
 
   /**
+   * Shows the Example
+   * @param {Request} req
+   * @param {Response} res
+   */
+  static example(req: Request, res: Response): void {
+    const input: string = fs.readFileSync(exampleInputFile, 'utf8');
+    const expected: string = fs.readFileSync(expectedOutputFile, 'utf8');
+    const output: string = Packer.pack(exampleInputFile);
+
+    res.status(200).send([
+      '<i><b>Example Input</b></i>:<br>',
+      input.replace(/\r?\n|\r/g, '<br>'),
+      '<br><br><i><b>Example Output</b></i>:<br>',
+      expected.replace(/\r?\n|\r/g, '<br>'),
+      '<br><br><i><b>Actual Output</b></i>:<br>',
+      output.replace(/\r?\n|\r/g, '<br>'),
+    ].join(''));
+  }
+
+  /**
+   * Provides Information about the Service
+   * @param {Request} req
+   * @param {Response} res
+   */
+  static info(req: Request, res: Response): void {
+    res.status(200).send([
+      '<i>Welcome to Mobiquity Packaging Challenge!</i><br>',
+      'Available Routes:',
+      ' - <b>POST /packages</b>: Create the Package',
+      ' - <b>GET /packages/example</b>: Shows the Example',
+      ' - <b>GET /info</b>: Provides Info',
+      ' - <b>GET /packages</b>: Lists the Packages',
+      ' - <b>DELETE /packages/:id</b>: Removes the Package',
+      ' - <b>GET /packages/:id</b>: Retrieves the Package',
+      ' - <b>PUT /packages/:id</b>: Updates the Package',
+    ].join('<br>'));
+  };
+
+  /**
    * Lists the Packages
    * @param {Request} req
    * @param {Response} res
@@ -68,6 +108,7 @@ export class Packages {
    */
   static remove(req: Request, res: Response): void {
     const id: string = req && req.params && req.params.id;
+
     let statusCode: number;
     let jsonResponseData: jsonDataType|jsonErrorType|jsonSuccessType;
 
@@ -88,7 +129,7 @@ export class Packages {
   };
 
   /**
-   * Retrieves a Package
+   * Retrieves the Package
    * @param {Request} req
    * @param {Response} res
    */
@@ -165,6 +206,11 @@ export class Packages {
   };
 };
 
+const gracefulShutdown = () => {
+  storage.cleanup(24 * 60 * 60);
+  storage.save();
+};
+
 // Graceful Shutdown Scenarios
-process.once('SIGTERM', storage.save) // kill
-process.once('SIGINT', storage.save) // ctrl+c
+process.once('SIGTERM', gracefulShutdown); // kill
+process.once('SIGINT', gracefulShutdown); // ctrl+c

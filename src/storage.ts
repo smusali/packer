@@ -1,10 +1,10 @@
 import * as fs from 'fs';
 import {v4 as uuidv4} from 'uuid';
 import {
-	itemType,
-	jsonDataType,
-	pkgType,
-	storageType,
+  itemType,
+  jsonDataType,
+  pkgType,
+  storageType,
 } from './types';
 
 /** Custom Storage Class */
@@ -36,7 +36,7 @@ export class Storage implements storageType {
           this.load();
         }
       } catch {
-      	this.data = {};
+        this.data = {};
       }
     }
 
@@ -65,7 +65,7 @@ export class Storage implements storageType {
      * @param {number} period
      */
     cleanup(period: number): void {
-      const before: number = Date.now() - period;
+      const before: number = Date.now() - 1000 * period;
       this.remove(Object.keys(this.data).reduce((
           ids: string[],
           id: string,
@@ -211,7 +211,7 @@ export class Storage implements storageType {
       }
 
       try {
-        fs.writeFileSync(this.file, rawData, 'utf8');
+        if (rawData.length > 2) fs.writeFileSync(this.file, rawData, 'utf8');
       } catch (exception) {
         throw new Error(`Unable to Write into ${this.file}: ${exception}`);
       }
