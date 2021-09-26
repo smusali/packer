@@ -1,112 +1,101 @@
 import * as fs from 'fs';
+import { Storage } from './storage'
+import { storageType, itemType, pkgType, jsonDataType } from './types'
 
-interface Item {
-  index: number,
-  weight: number,
-  cost: number
-}
-
-interface Pkg {
-  capacity: number,
-  items: Item[]
-}
-
+/** Packer Class */
 export class Packer {
+  /**
+   * Packs after calculation
+   * @param {string} inputFile
+   * @return {string}
+   */
   static pack(inputFile: string): string {
-    const pkgs: any[] = Packer.readAndParse(inputFile);
-    const results: any[] = Packer.calculate(pkgs);
-    return Packer.report(results);
-  }
-
-  static readAndParse(inputFile: string): string[] {
-    let rawData: string;
-    try{
-      rawData = fs.readFileSync(inputFile, 'utf8');
+    const storage: storageType = new Storage('json', `${inputFile}.json`);
+    let pkgStrings: string;
+    try {
+      pkgStrings = fs.readFileSync(inputFile, 'utf8');
     } catch (exception) {
       throw Error(`Unable to Read ${inputFile}: ${exception}`);
     };
 
-    try {
-      return rawData.split(')\n').reduce((pkgs: string[], line: string) => {
-        const lineSplit: string[] = line.replace(/ /g, '').split(':(');
-        const pkg: any = lineSplit[1].split(')(').reduce((data: any, item: string) => {
-          const itemSplit: string[] = item.split(',');
-          data.weights.push(Math.round(100 * Number(itemSplit[1])));
-          data.costs.push(Number(itemSplit[2].split(')')[0].split('€')[1]));
-          data.indices.push(Number(itemSplit[0]));
-          data.length += 1;
-          return data;
-        }, {
-          capacity: Math.round(100 * Number(lineSplit[0])),
-          length: 0,
-          weights: [],
-          costs: [],
-          indices: []
-        });
+    return Packer.report(storage.parse(pkgStrings).map((pkgID: string) => {
+      const pkg: pkgType = storage.retrieve(pkgID);
+      const indices: number[] = Packer.knapSack(pkg)
+      const items: itemType[] = indices.map((index: number) => {
+        return pkg.items[index - 1];
+      });
 
-        pkgs.push(pkg);
-        return pkgs;
-      }, []);
-    } catch (exception) {
-      throw Error(`Unable to Parse ${inputFile}: ${exception}`);
-    };
+      storage.update(pkgID, {
+        ...pkg,
+        items,
+        count: items.length
+      });
+
+      return indices;
+    }));
   }
 
-  static calculate(pkgs: string[]): any[] {
-    return pkgs.map((pkg: any) => {
-      const {
-        capacity,
-        weights,
-        costs,
-        indices,
-        length
-      } = pkg;
+  /**
+   * Reports results as a text
+   * @param {number[]} pkgIDs
+   * @return {}
+   */
+  static report(pkgIDs: number[][]): string {
+    return pkgIDs.map((indices) => {
+      if (indices && indices.length === 0) return '-';
+      return indices.join(',');
+    }).join('\n');
+  };
 
-      return Packer.knapSack(capacity, weights, costs, indices, length);
-    })
-  }
+  /**
+   * Solve the Knapsack
+   * @param {pkgType} pkg
+   * @return {number[]}
+   */
+  static knapSack(pkg: pkgType): number[] {
+    const capacity: number = Math.round(Number(100 * pkg.capacity));
+    const items: itemType[] = pkg.items;
+    const weights: number[] = items.map(item => Math.round(Number(100 * item.weight)));
+    const costs: number[] = items.map(item => item.cost);
+    const indices: number[] = items.map(item => item.index);
+    const count: number = items.length;
 
-  static knapSack(capacity: number, weights: number[], costs: number[], indices: number[], length: number): number[] {
-    let itemIndex: number = 0;
-    let subCapacity: number = 0;
+    let i: number = 0;
+    let w: number = 0;
     let totalCost: number = 0;
-    let table = new Array(length + 1);
-    for(itemIndex = 0; itemIndex < table.length; itemIndex++){
-      table[itemIndex] = new Array(capacity + 1);
-      for(let subCapacity = 0; subCapacity < capacity + 1; subCapacity++){
-        table[itemIndex][subCapacity] = 0;
+    const table = new Array(count + 1);
+    for (i = 0; i < table.length; i++) {
+      table[i] = new Array(capacity + 1);
+      for (let w = 0; w < capacity + 1; w++) {
+        table[i][w] = 0;
       }
     }
-   
-    for (itemIndex = 0; itemIndex <= length; itemIndex++) {
-      for (subCapacity = 0; subCapacity <= capacity; subCapacity++) {
-        if (itemIndex == 0 || subCapacity == 0)
-          table[itemIndex][subCapacity] = 0;
-        else if (weights[itemIndex - 1] <= subCapacity)
-          table[itemIndex][subCapacity] = Math.max(table[itemIndex - 1][subCapacity],
-            costs[itemIndex - 1] + table[itemIndex - 1][subCapacity - weights[itemIndex - 1]]);
-        else
-          table[itemIndex][subCapacity] = table[itemIndex - 1][subCapacity];
+
+    for (i = 0; i <= count; i++) {
+      for (w = 0; w <= capacity; w++) {
+        if (i == 0 || w == 0) {
+          table[i][w] = 0;
+        } else if (weights[i - 1] <= w) {
+          table[i][w] = Math.max(table[i - 1][w],
+              costs[i - 1] + table[i - 1][w - weights[i - 1]]);
+        } else {
+          table[i][w] = table[i - 1][w];
+        }
       }
     }
-   
+
     const pickedItems = [];
-    totalCost = table[length][capacity];
-    subCapacity = capacity;
-    for (itemIndex = length; itemIndex > 0 && totalCost > 0; itemIndex--) {
-      if (totalCost === table[itemIndex - 1][subCapacity]) continue
-      pickedItems.push(indices[itemIndex - 1]);
-      totalCost -= costs[itemIndex - 1];
-      subCapacity -= weights[itemIndex - 1];
+    totalCost = table[count][capacity];
+    w = capacity;
+    for (i = count; i > 0 && totalCost > 0; i--) {
+      if (totalCost === table[i - 1][w]) continue;
+      pickedItems.push(indices[i - 1]);
+      totalCost -= costs[i - 1];
+      w -= weights[i - 1];
     }
 
     return pickedItems.sort();
   }
-
-  static report(pickedItems: number[][]): string {
-    return pickedItems.map((indices) => {
-      if (indices.length) return indices.join(',');
-      return '-'
-    }).join('\n');
-  }
 }
+
+console.log(Packer.pack('./resources/example_input'));
