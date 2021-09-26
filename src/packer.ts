@@ -1,6 +1,10 @@
 import * as fs from 'fs';
-import { Storage } from './storage'
-import { storageType, itemType, pkgType, jsonDataType } from './types'
+import {Storage} from './storage';
+import {
+  itemType,
+  pkgType,
+  storageType,
+} from './types';
 
 /** Packer Class */
 export class Packer {
@@ -20,7 +24,7 @@ export class Packer {
 
     return Packer.report(storage.parse(pkgStrings).map((pkgID: string) => {
       const pkg: pkgType = storage.retrieve(pkgID);
-      const indices: number[] = Packer.knapSack(pkg)
+      const indices: number[] = Packer.knapSack(pkg);
       const items: itemType[] = indices.map((index: number) => {
         return pkg.items[index - 1];
       });
@@ -28,7 +32,7 @@ export class Packer {
       storage.update(pkgID, {
         ...pkg,
         items,
-        count: items.length
+        count: items.length,
       });
 
       return indices;
@@ -38,7 +42,7 @@ export class Packer {
   /**
    * Reports results as a text
    * @param {number[]} pkgIDs
-   * @return {}
+   * @return {string}
    */
   static report(pkgIDs: number[][]): string {
     return pkgIDs.map((indices) => {
@@ -55,9 +59,18 @@ export class Packer {
   static knapSack(pkg: pkgType): number[] {
     const capacity: number = Math.round(Number(100 * pkg.capacity));
     const items: itemType[] = pkg.items;
-    const weights: number[] = items.map(item => Math.round(Number(100 * item.weight)));
-    const costs: number[] = items.map(item => item.cost);
-    const indices: number[] = items.map(item => item.index);
+    const weights: number[] = items.map((item) => {
+      return Math.round(Number(100 * item.weight));
+    });
+
+    const costs: number[] = items.map((item) => {
+      return Math.round(Number(item.cost));
+    });
+
+    const indices: number[] = items.map((item) => {
+      return Math.round(Number(item.index));
+    });
+
     const count: number = items.length;
 
     let i: number = 0;

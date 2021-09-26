@@ -1,6 +1,11 @@
 import * as fs from 'fs';
 import {v4 as uuidv4} from 'uuid';
-import {storageType, itemType, pkgType, jsonDataType} from './types'
+import {
+	itemType,
+	jsonDataType,
+	pkgType,
+	storageType,
+} from './types';
 
 /** Custom Storage Class */
 export class Storage implements storageType {
@@ -18,9 +23,77 @@ export class Storage implements storageType {
         throw new Error(`Unsupported Storage Type: ${type}`);
       }
 
+      if (!file.endsWith('.json')) {
+        throw new Error(`Unsupported File Extension: ${file}`);
+      }
+
       this.type = type;
       this.file = file;
       this.data = {};
+
+      try {
+        if (fs.statSync(file).isFile()) {
+          this.load();
+        }
+      } catch {
+      	this.data = {};
+      }
+    }
+
+    /**
+     * Adds new entry
+     * @param {pkgType} pkg
+     * @return {string|any}
+     */
+    add(pkg: pkgType): string|any {
+      if (pkg && pkg.constructor === Object && Object.keys(pkg).length === 0) {
+        return undefined;
+      }
+
+      const id: string = uuidv4();
+      this.data[id] = {
+        ...pkg,
+        created: Date.now(),
+        updated: Date.now(),
+      };
+
+      return id;
+    }
+
+    /**
+     * Cleans up old entries
+     * @param {number} period
+     */
+    cleanup(period: number): void {
+      const before: number = Date.now() - period;
+      this.remove(Object.keys(this.data).reduce((
+          ids: string[],
+          id: string,
+      ) => {
+        const pkg: pkgType = this.data[id];
+        if (pkg && pkg.updated && pkg.updated < before) ids.push(id);
+        return ids;
+      }, []));
+    }
+
+    /**
+     * Lists all the entries
+     * @param {string[]} ids?
+     * @return {pkgType[]}
+     */
+    list(ids?: string[]): pkgType[] {
+      if (!ids) {
+        ids = Object.keys(this.data);
+      }
+
+      return ids.reduce((list: pkgType[], id: string) => {
+        if (id in this.data) {
+          const pkg: pkgType = this.retrieve(id);
+          list.push({...pkg, id});
+        }
+
+        return list;
+      }, []);
     }
 
     /**
@@ -42,65 +115,68 @@ export class Storage implements storageType {
     }
 
     /**
-     * Saves into the given file
+     * Parses the file content
+     * @param {string} pkgStrings
+     * @return {string[]}
      */
-    save(): void {
-      let rawData: string;
-      try {
-        rawData = JSON.stringify(this.data);
-      } catch (exception) {
-        throw new Error(`Unable to Stringify ${this.data}: ${exception}`);
-      }
-
-      try {
-        fs.writeFileSync(this.file, rawData, 'utf8');
-      } catch (exception) {
-        throw new Error(`Unable to Write into ${this.file}: ${exception}`);
-      }
+    parse(pkgStrings: string): string[] {
+      const that = this;
+      return pkgStrings.split('\n').filter(Boolean).map((pkgString) => {
+        return that.parsePackage(pkgString);
+      });
     }
 
     /**
-     * Adds new entry
-     * @param {pkgType} pkg
-     * @return {string|any}
+     * Parses just one line of the file content
+     * @param {string} pkgString
+     * @return {string}
      */
-    add(pkg: pkgType): string|any {
-      if (pkg && pkg.constructor === Object && Object.keys(pkg).length === 0) {
-        return undefined;
-      }
+    parsePackage(pkgString: string): string {
+      const pkgStringSplit = pkgString.split(' : ');
+      const capacity: number = Math.round(Number(pkgStringSplit[0]));
+      const itemStrings: string = pkgStringSplit[1];
+      const itemStringSplit: string[] = itemStrings.split(' ');
+      const items: itemType[] = itemStringSplit.map((itemString: string) => {
+        itemString = itemString.replace(/[()]/g, '');
+        const itemStringSplit: string[] = itemString.split(',');
+        const index: number = Math.round(Number(itemStringSplit[0]));
+        const weight: number = Math.round(Number(itemStringSplit[1]));
+        const costString: string = itemStringSplit[2];
+        const cost: number = Math.round(Number(costString.split('€')[1]));
+        return {index, weight, cost};
+      });
 
-      const id: string = uuidv4();
-      this.data[id] = {
-        ...pkg,
-        created: Date.now(),
-        updated: Date.now()
-      };
-
-      return id;
+      return this.add({capacity, items, count: items.length});
     }
 
     /**
-     * Updates the given entry
+     * Prints the given entries as a text
+     * @param {string[]} ids?
+     * @return {string}
+     */
+    print(ids?: string[]): string {
+      if (!ids) {
+        ids = Object.keys(this.data);
+      }
+
+      return ids.filter((id: string) => {
+        return (id in this.data);
+      }).map(this.printPackage).join('\n');
+    }
+
+    /**
+     * Prints just one package
      * @param {string} id
-     * @param {pkgType} pkg
-     * @return {string|any}
+     * @return {string}
      */
-    update(id: string, pkg: pkgType): string|any {
-      if (pkg && pkg.constructor === Object && Object.keys(pkg).length === 0) {
-        return undefined;
-      }
+    printPackage(id: string): string {
+      const pkg: pkgType = this.data[id];
+      const capacity: number = pkg.capacity;
+      const itemsJointString: string = pkg.items.map((item: itemType) => {
+        return `(${item.index},${item.weight},€${item.cost})`;
+      }).join(' ');
 
-      if (id in this.data) {
-          this.data[id] = {
-            ...this.data[id],
-            ...pkg,
-            updated: Date.now()
-          }
-
-          return id;
-      }
-
-      return undefined;
+      return [capacity, itemsJointString].join(' : ');
     }
 
     /**
@@ -124,102 +200,44 @@ export class Storage implements storageType {
     }
 
     /**
-     * Lists all the entries
-     * @param {string[]} ids?
-     * @return {pkgType[]}
+     * Saves into the given file
      */
-    list(ids?: string[]): pkgType[] {
-      if (!ids) {
-        ids = Object.keys(this.data);
+    save(): void {
+      let rawData: string;
+      try {
+        rawData = JSON.stringify(this.data);
+      } catch (exception) {
+        throw new Error(`Unable to Stringify ${this.data}: ${exception}`);
       }
 
-      return ids.reduce((list: pkgType[], id: string) => {
-          if (id in this.data) {
-              const pkg: pkgType = this.retrieve(id);
-            list.push({...pkg, id});
-        }
-
-        return list;
-      }, []);
+      try {
+        fs.writeFileSync(this.file, rawData, 'utf8');
+      } catch (exception) {
+        throw new Error(`Unable to Write into ${this.file}: ${exception}`);
+      }
     }
 
     /**
-     * Prints the given entries as a text
-     * @param {string[]} ids?
-     * @return {string}
-     */
-    print(ids?: string[]): string {
-      if (!ids) {
-        ids = Object.keys(this.data);
-      }
-
-      return ids.filter((id: string) => {
-          return (id in this.data);
-      }).map(this.printPackage).join('\n');
-    }
-
-    /**
-     * Prints just one package
+     * Updates the given entry
      * @param {string} id
-     * @return {string}
+     * @param {pkgType} pkg
+     * @return {string|any}
      */
-    printPackage(id: string): string {
-      const pkg: pkgType = this.data[id];
-      const capacity: number = pkg.capacity;
-      const itemsJointString: string = pkg.items.map((item: itemType) => {
-        return `(${item.index},${item.weight},€${item.cost})`;
-      }).join(' ');
+    update(id: string, pkg: pkgType): string|any {
+      if (pkg && pkg.constructor === Object && Object.keys(pkg).length === 0) {
+        return undefined;
+      }
 
-      return [capacity, itemsJointString].join(' : ');
-    }
+      if (id in this.data) {
+        this.data[id] = {
+          ...this.data[id],
+          ...pkg,
+          updated: Date.now(),
+        };
 
+        return id;
+      }
 
-    /**
-     * Parses the file content
-     * @param {string} pkgStrings
-     * @return {string[]}
-     */
-    parse(pkgStrings: string): string[] {
-      const that = this;
-      return pkgStrings.split('\n').filter(Boolean).map((pkgString) => {
-        return that.parsePackage(pkgString);
-      });
-    }
-
-    /**
-     * Parses just one line of the file content
-     * @param {string} pkgString
-     * @return {string}
-     */
-    parsePackage(pkgString: string): string {
-      const pkgStringSplit = pkgString.split(' : ');
-      const capacity: number = Math.round(Number(pkgStringSplit[0]));
-      const itemStrings: string = pkgStringSplit[1];
-      const items: itemType[] = itemStrings.split(' ').map((itemString: string) => {
-        itemString = itemString.replace(/[()]/g, '')
-        const itemStringSplit: string[] = itemString.split(',');
-        const index: number = Math.round(Number(itemStringSplit[0]));
-        const weight: number = Math.round(Number(itemStringSplit[1]));
-        const cost: number = Math.round(Number(itemStringSplit[2].split('€')[1]));
-        return {index, weight, cost};
-      });
-
-      return this.add({capacity, items, count: items.length});
-    }
-
-    /**
-     * Cleans up old entries
-     * @param {number} period
-     */
-    cleanup(period: number): void {
-      const before: number = Date.now() - period;
-      return this.remove(Object.keys(this.data).reduce((
-          ids: string[],
-          id: string,
-      ) => {
-      	const pkg: pkgType = this.data[id];
-        if (pkg && pkg.updated && pkg.updated < before) ids.push(id);
-        return ids;
-      }, []));
+      return undefined;
     }
 };

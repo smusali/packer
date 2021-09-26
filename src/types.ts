@@ -1,33 +1,42 @@
 export interface storageType {
-    load(): void;
-    save(): void;
     add(pkg: pkgType): string;
-    update(id: string, pkg: pkgType): string|any
-    remove(ids: string[]): void;
-    retrieve(id: string): pkgType|any;
+    cleanup(period: number): void;
     list(ids?: string[]): pkgType[];
-    print(ids?: string[]): string;
-    printPackage(id: string): string;
+    load(): void;
     parse(pkgStrings: string): string[];
     parsePackage(pkgString: string): string;
-    cleanup(period: number): void;
+    print(ids?: string[]): string;
+    printPackage(id: string): string;
+    remove(ids: string[]): void;
+    retrieve(id: string): pkgType|any;
+    save(): void;
+    update(id: string, pkg: pkgType): string|any;
 }
 
 export interface itemType {
-    weight: number,
     cost: number,
-    index: number
+    index: number,
+    weight: number,
 }
 
 export interface pkgType {
     capacity: number,
-    items: itemType[],
     count: number,
     created?: number,
+    id?: string,
+    items: itemType[],
     updated?: number,
-    id?: string
 }
 
 export interface jsonDataType {
-	[id: string]: pkgType
+    [id: string]: pkgType
+}
+
+export interface jsonErrorType {
+    code: 'EINVALID'|'ENOTFOUND',
+    error: string,
+}
+
+export interface jsonSuccessType {
+    message: string
 }
