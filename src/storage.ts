@@ -1,5 +1,8 @@
+/** External Dependencies */
 import * as fs from 'fs';
 import {v4 as uuidv4} from 'uuid';
+
+/** Types and Interfaces */
 import {
   itemType,
   jsonDataType,
@@ -9,6 +12,7 @@ import {
 
 /** Custom Storage Class */
 export class Storage implements storageType {
+    /** Initialize Class Fields */
     type: string;
     file: string;
     data: jsonDataType;

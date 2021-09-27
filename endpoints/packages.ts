@@ -1,8 +1,12 @@
+/** External Dependencies */
 import {Request, Response} from 'express';
 import * as fs from 'fs';
 
+/** Internal Dependencies */
 import {Packer} from '../src/packer';
 import {Storage} from '../src/storage';
+
+/** Types and Interfaces */
 import {
   itemType,
   jsonDataType,
@@ -12,6 +16,7 @@ import {
   storageType,
 } from '../src/types';
 
+/** Constants */
 const exampleInputFile: string = './resources/example_input';
 const expectedOutputFile: string = './resources/example_output';
 const storageFile: string = process.env.STORAGE || './resources/packages.json';

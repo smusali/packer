@@ -1,5 +1,8 @@
+/** External Dependencies */
 import * as fs from 'fs';
 import {Storage} from './storage';
+
+/** Types and Interfaces */
 import {
   itemType,
   pkgType,

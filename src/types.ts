@@ -1,3 +1,4 @@
+/** An Interface for Storage Class */
 export interface storageType {
     add(pkg: pkgType|any): string|any;
     cleanup(period: number): void;
@@ -13,12 +14,14 @@ export interface storageType {
     update(id: string, pkg: pkgType|any): string|any;
 }
 
+/** An Item Type */
 export interface itemType {
     cost: number,
     index: number,
     weight: number,
 }
 
+/** A Package Type */
 export interface pkgType {
     capacity: number,
     count: number,
@@ -28,15 +31,18 @@ export interface pkgType {
     updated?: number,
 }
 
+/** A Package JSON Format */
 export interface jsonDataType {
     [id: string]: pkgType
 }
 
+/** A JSON Response Error Format */
 export interface jsonErrorType {
     code: 'EINVALID'|'ENOTFOUND',
     error: string,
 }
 
+/** A JSON Response Success Format */
 export interface jsonSuccessType {
     message: string,
     id: string,
