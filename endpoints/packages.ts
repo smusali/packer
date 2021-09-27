@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import {Packer} from '../src/packer';
 import {Storage} from '../src/storage';
 import {
+  itemType,
   jsonDataType,
   jsonErrorType,
   jsonSuccessType,
@@ -41,19 +42,19 @@ export class Packages {
           error: 'Invalid Request Body',
           code: 'EINVALID',
         };
-
-        const pkg: pkgType = storage.retrieve(pkgID);
+      } else {
+        const pkg: pkgType = storage.retrieve(id);
         const indices: number[] = Packer.knapSack(pkg);
         const items: itemType[] = indices.map((index: number) => {
           return pkg.items[index - 1];
         });
 
-        storage.update(pkgID, {
+        storage.update(id, {
           ...pkg,
           items,
           count: items.length,
         });
-      } else {
+
         statusCode = 200;
         jsonResponseData = {
           message: `Successfully Updated ${id}`,
@@ -94,11 +95,11 @@ export class Packages {
     res.status(200).send([
       '<i>Welcome to Mobiquity Packaging Challenge!</i><br>',
       'Available Routes:',
-      ' - <b>POST /packages</b>: Create the Package',
-      ' - <b>GET /packages/example</b>: Shows the Example',
-      ' - <b>GET /info</b>: Provides Info',
+      ' - <b>POST /packages</b>: Creates a package',
+      ' - <b>GET /packages/example</b>: Displays the example calculation',
+      ' - <b>GET /info</b>: Displays the details about the API',
       ' - <b>GET /packages</b>: Lists the Packages',
-      ' - <b>DELETE /packages/:id</b>: Removes the Package',
+      ' - <b>DELETE /packages/:id</b>: Deletes the Package',
       ' - <b>GET /packages/:id</b>: Retrieves the Package',
       ' - <b>PUT /packages/:id</b>: Updates the Package',
     ].join('<br>'));
@@ -208,13 +209,13 @@ export class Packages {
             code: 'EINVALID',
           };
         } else {
-          const pkg: pkgType = storage.retrieve(pkgID);
+          const pkg: pkgType = storage.retrieve(updatedID);
           const indices: number[] = Packer.knapSack(pkg);
           const items: itemType[] = indices.map((index: number) => {
             return pkg.items[index - 1];
           });
 
-          storage.update(pkgID, {
+          storage.update(updatedID, {
             ...pkg,
             items,
             count: items.length,

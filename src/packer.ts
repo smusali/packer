@@ -41,11 +41,11 @@ export class Packer {
 
   /**
    * Reports results as a text
-   * @param {number[]} pkgIDs
+   * @param {number[]} pkgIndices
    * @return {string}
    */
-  static report(pkgIDs: number[][]): string {
-    return pkgIDs.map((indices) => {
+  static report(pkgIndices: number[][]): string {
+    return pkgIndices.map((indices) => {
       if (indices && indices.length === 0) return '-';
       return indices.join(',');
     }).join('\n');
