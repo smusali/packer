@@ -1,6 +1,12 @@
-# ignore npm install artifacts
+# ignore npm artifacts
 node_modules/
 package-lock.json
 
-# ignore Mac artifacts
+# ignore mac artifacts
 **/.DS_Store
+
+# ignore test artifacts
+**/.nyc_output
+**/coverage
+**/.tap-output
+resources/package.json

@@ -45,7 +45,7 @@ export class Storage implements storageType {
      * @param {pkgType} pkg
      * @return {string|any}
      */
-    add(pkg: pkgType): string|any {
+    add(pkg: pkgType|any): string|any {
       if (pkg && pkg.constructor === Object && Object.keys(pkg).length === 0) {
         return undefined;
       }
@@ -108,7 +108,7 @@ export class Storage implements storageType {
       };
 
       try {
-        this.data = JSON.parse(rawData);
+        if (rawData.length > 2) this.data = JSON.parse(rawData);
       } catch (exception) {
         throw new Error(`Unable to Parse ${rawData}: ${exception}`);
       }
@@ -133,16 +133,16 @@ export class Storage implements storageType {
      */
     parsePackage(pkgString: string): string {
       const pkgStringSplit = pkgString.split(' : ');
-      const capacity: number = Math.round(Number(pkgStringSplit[0]));
+      const capacity: number = Number(pkgStringSplit[0]);
       const itemStrings: string = pkgStringSplit[1];
       const itemStringSplit: string[] = itemStrings.split(' ');
       const items: itemType[] = itemStringSplit.map((itemString: string) => {
         itemString = itemString.replace(/[()]/g, '');
         const itemStringSplit: string[] = itemString.split(',');
-        const index: number = Math.round(Number(itemStringSplit[0]));
-        const weight: number = Math.round(Number(itemStringSplit[1]));
+        const index: number = Number(itemStringSplit[0]);
+        const weight: number = Number(itemStringSplit[1]);
         const costString: string = itemStringSplit[2];
-        const cost: number = Math.round(Number(costString.split('€')[1]));
+        const cost: number = Number(costString.split('€')[1]);
         return {index, weight, cost};
       });
 
@@ -155,13 +155,16 @@ export class Storage implements storageType {
      * @return {string}
      */
     print(ids?: string[]): string {
+      const that = this;
       if (!ids) {
         ids = Object.keys(this.data);
       }
 
       return ids.filter((id: string) => {
-        return (id in this.data);
-      }).map(this.printPackage).join('\n');
+        return (id in that.data);
+      }).map((id: string) => {
+        return that.printPackage(id);
+      }).join('\n');
     }
 
     /**
@@ -223,7 +226,7 @@ export class Storage implements storageType {
      * @param {pkgType} pkg
      * @return {string|any}
      */
-    update(id: string, pkg: pkgType): string|any {
+    update(id: string, pkg: pkgType|any): string|any {
       if (pkg && pkg.constructor === Object && Object.keys(pkg).length === 0) {
         return undefined;
       }

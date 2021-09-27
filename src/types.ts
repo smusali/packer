@@ -1,5 +1,5 @@
 export interface storageType {
-    add(pkg: pkgType): string;
+    add(pkg: pkgType|any): string|any;
     cleanup(period: number): void;
     list(ids?: string[]): pkgType[];
     load(): void;
@@ -10,7 +10,7 @@ export interface storageType {
     remove(ids: string[]): void;
     retrieve(id: string): pkgType|any;
     save(): void;
-    update(id: string, pkg: pkgType): string|any;
+    update(id: string, pkg: pkgType|any): string|any;
 }
 
 export interface itemType {
@@ -38,5 +38,6 @@ export interface jsonErrorType {
 }
 
 export interface jsonSuccessType {
-    message: string
+    message: string,
+    id: string,
 }

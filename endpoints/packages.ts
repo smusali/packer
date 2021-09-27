@@ -41,10 +41,23 @@ export class Packages {
           error: 'Invalid Request Body',
           code: 'EINVALID',
         };
+
+        const pkg: pkgType = storage.retrieve(pkgID);
+        const indices: number[] = Packer.knapSack(pkg);
+        const items: itemType[] = indices.map((index: number) => {
+          return pkg.items[index - 1];
+        });
+
+        storage.update(pkgID, {
+          ...pkg,
+          items,
+          count: items.length,
+        });
       } else {
         statusCode = 200;
         jsonResponseData = {
           message: `Successfully Updated ${id}`,
+          id,
         };
       }
     }
@@ -116,6 +129,7 @@ export class Packages {
       statusCode = 200;
       jsonResponseData = {
         message: `Successfully Removed ${id}`,
+        id,
       };
     } else {
       statusCode = 400;
@@ -194,9 +208,22 @@ export class Packages {
             code: 'EINVALID',
           };
         } else {
+          const pkg: pkgType = storage.retrieve(pkgID);
+          const indices: number[] = Packer.knapSack(pkg);
+          const items: itemType[] = indices.map((index: number) => {
+            return pkg.items[index - 1];
+          });
+
+          storage.update(pkgID, {
+            ...pkg,
+            items,
+            count: items.length,
+          });
+
           statusCode = 200;
           jsonResponseData = {
             message: `Successfully Updated ${id}`,
+            id,
           };
         }
       }
