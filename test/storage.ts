@@ -1,9 +1,19 @@
-import {test, threw} from 'tap';
+/** External Dependencies */
 import * as fs from 'fs';
-import {Storage} from '../src/storage';
-import {storageType, pkgType} from '../src/types';
+import {test, threw} from 'tap';
 
+/** Internal Dependencies */
+import {Storage} from '../src/storage';
+
+/** Types and Interfaces */
+import {
+  storageType,
+  pkgType,
+} from '../src/types';
+
+/** Variable to Use */
 let file: string = './resources/package.json';
+let storage: storageType;
 const type: string = 'json';
 const data: pkgType|any = {
   capacity: 50,
@@ -15,8 +25,7 @@ const data: pkgType|any = {
   }],
 };
 
-let storage: storageType;
-
+/** Test Storage Basic Functionality */
 test('storage', async (t) => {
   const unsupportedType: string = 'text';
   t.throws(() => {
@@ -70,7 +79,7 @@ test('storage', async (t) => {
     updated: Number,
   }), undefined, 'undefined for take id');
 
-  storage.cleanup(0.001);
+  storage.cleanup(10);
   t.match(storage.retrieve(id), {
     ...data,
     capacity: data.capacity * 2,
@@ -92,6 +101,7 @@ test('storage', async (t) => {
   storage.save();
 }).catch(threw);
 
+/** Test load() and save() */
 test('test load and save', async (t) => {
   file = file.replace('.', '');
   storage = new Storage(type, file);

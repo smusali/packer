@@ -57,6 +57,9 @@ You can also check out the [`example input`](./resources/example_input) and [`ex
 
 Please, refer to [NOTES.md](./docs/NOTES.md) for the notes and feedback I have on this challenge.
 
+## TO BE DONE
+1. Add ery explicit unit testing to catch the exceptions thrown by `load` and `save` methods of the [`Storage`](./src/storage.ts) class.
+
 ## License
 This package has been published under an MIT license. See the [LICENSE](./LICENSE) file and https://opensource.org/licenses/MIT
 
