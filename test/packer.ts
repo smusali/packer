@@ -8,9 +8,9 @@ import {Packer} from '../src/packer';
 /** Test the Main Pack Functionality */
 test('pack', async (t) => {
   const exampleInputFile: string = './resources/example_input';
-  const expectedOutputFile: string = './resources/expected_output';
+  const exampleOutputFile: string = './resources/example_output';
   const invalidInputFile: string = './resources/example';
-  const expected: string = fs.readFileSync(expectedOutputFile, 'utf-8');
+  const expected: string = fs.readFileSync(exampleOutputFile, 'utf-8');
 
   t.same(Packer.pack(exampleInputFile), expected, 'it should pack as expected');
   t.throws(() => {

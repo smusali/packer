@@ -61,7 +61,15 @@ export class Packer {
    */
   static knapSack(pkg: pkgType): number[] {
     const capacity: number = Math.round(Number(100 * pkg.capacity));
-    const items: itemType[] = pkg.items;
+    const items: itemType[] = pkg.items.sort((
+        itemOne: itemType,
+        itemTwo: itemType,
+    ) => {
+      if (itemOne.weight < itemTwo.weight) return -1;
+      if (itemOne.weight > itemTwo.weight) return 1;
+      return 0;
+    });
+
     const weights: number[] = items.map((item) => {
       return Math.round(Number(100 * item.weight));
     });
