@@ -32,7 +32,7 @@ export class Packages {
   static create(req: Request, res: Response): void {
     let statusCode: number;
     let jsonResponseData: jsonDataType|jsonErrorType|jsonSuccessType;
-    const createObject: pkgType = req && req.body;
+    const createObject: pkgType|any = req && req.body;
     if (!createObject) {
       statusCode = 400;
       jsonResponseData = {
@@ -62,7 +62,7 @@ export class Packages {
 
         statusCode = 200;
         jsonResponseData = {
-          message: `Successfully Updated ${id}`,
+          message: `Successfully Created ${id}`,
           id,
         };
       }
@@ -92,25 +92,6 @@ export class Packages {
   }
 
   /**
-   * Provides Information about the Service
-   * @param {Request} req
-   * @param {Response} res
-   */
-  static info(req: Request, res: Response): void {
-    res.status(200).send([
-      '<i>Welcome to Mobiquity Packaging Challenge!</i><br>',
-      'Available Routes:',
-      ' - <b>POST /packages</b>: Creates a package',
-      ' - <b>GET /packages/example</b>: Displays the example calculation',
-      ' - <b>GET /info</b>: Displays the details about the API',
-      ' - <b>GET /packages</b>: Lists the Packages',
-      ' - <b>DELETE /packages/:id</b>: Deletes the Package',
-      ' - <b>GET /packages/:id</b>: Retrieves the Package',
-      ' - <b>PUT /packages/:id</b>: Updates the Package',
-    ].join('<br>'));
-  };
-
-  /**
    * Lists the Packages
    * @param {Request} req
    * @param {Response} res
@@ -128,24 +109,11 @@ export class Packages {
   static remove(req: Request, res: Response): void {
     const id: string = req && req.params && req.params.id;
 
-    let statusCode: number;
-    let jsonResponseData: jsonDataType|jsonErrorType|jsonSuccessType;
-
-    if (id) {
-      statusCode = 200;
-      jsonResponseData = {
-        message: `Successfully Removed ${id}`,
-        id,
-      };
-    } else {
-      statusCode = 400;
-      jsonResponseData = {
-        error: 'Invalid or Missing Package ID',
-        code: 'EINVALID',
-      };
-    }
-
-    res.status(statusCode).json(jsonResponseData);
+    storage.remove([id]);
+    res.status(200).json({
+      message: `Successfully Removed ${id}`,
+      id,
+    });
   };
 
   /**
@@ -158,23 +126,15 @@ export class Packages {
     let statusCode: number;
     let jsonResponseData: jsonDataType|jsonErrorType;
 
-    if (id) {
-      const pkg: pkgType|any = storage.retrieve(id);
-      if (pkg) {
-        statusCode = 200;
-        jsonResponseData = pkg;
-      } else {
-        statusCode = 400;
-        jsonResponseData = {
-          error: `No Package Found for ${id}`,
-          code: 'ENOTFOUND',
-        };
-      }
+    const pkg: pkgType|any = storage.retrieve(id);
+    if (pkg) {
+      statusCode = 200;
+      jsonResponseData = pkg;
     } else {
       statusCode = 400;
       jsonResponseData = {
-        error: 'Invalid or Missing Package ID',
-        code: 'EINVALID',
+        error: `No Package Found for ${id}`,
+        code: 'ENOTFOUND',
       };
     }
 
@@ -191,47 +151,39 @@ export class Packages {
     let statusCode: number;
     let jsonResponseData: jsonDataType|jsonErrorType|jsonSuccessType;
 
-    if (!id) {
+    const updateObject: pkgType = req && req.body;
+    if (!updateObject) {
       statusCode = 400;
       jsonResponseData = {
-        error: 'Invalid or Missing Package ID',
+        error: 'Missing Request Body',
         code: 'EINVALID',
       };
     } else {
-      const updateObject: pkgType = req && req.body;
-      if (!updateObject) {
+      const updatedID: string|any = storage.update(id, updateObject);
+      if (!updatedID) {
         statusCode = 400;
         jsonResponseData = {
-          error: 'Missing Request Body',
+          error: 'Invalid Request Body',
           code: 'EINVALID',
         };
       } else {
-        const updatedID: string|any = storage.update(id, updateObject);
-        if (!updatedID) {
-          statusCode = 400;
-          jsonResponseData = {
-            error: 'Invalid Request Body',
-            code: 'EINVALID',
-          };
-        } else {
-          const pkg: pkgType = storage.retrieve(updatedID);
-          const indices: number[] = Packer.knapSack(pkg);
-          const items: itemType[] = indices.map((index: number) => {
-            return pkg.items[index - 1];
-          });
+        const pkg: pkgType = storage.retrieve(updatedID);
+        const indices: number[] = Packer.knapSack(pkg);
+        const items: itemType[] = indices.map((index: number) => {
+          return pkg.items[index - 1];
+        });
 
-          storage.update(updatedID, {
-            ...pkg,
-            items,
-            count: items.length,
-          });
+        storage.update(updatedID, {
+          ...pkg,
+          items,
+          count: items.length,
+        });
 
-          statusCode = 200;
-          jsonResponseData = {
-            message: `Successfully Updated ${id}`,
-            id,
-          };
-        }
+        statusCode = 200;
+        jsonResponseData = {
+          message: `Successfully Updated ${id}`,
+          id,
+        };
       }
     }
 

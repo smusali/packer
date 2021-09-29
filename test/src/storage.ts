@@ -3,47 +3,44 @@ import * as fs from 'fs';
 import {test, threw} from 'tap';
 
 /** Internal Dependencies */
-import {Storage} from '../src/storage';
+import {Storage} from '../../src/storage';
 
 /** Types and Interfaces */
+import {storageType} from '../../src/types';
+
+/** Constants */
 import {
-  storageType,
-  pkgType,
-} from '../src/types';
+  data,
+  existentFile,
+  inexistentFile,
+  supportedType,
+  unsupportedExtension,
+  unsupportedType,
+} from '../resources/constants';
 
 /** Variable to Use */
-let file: string = './resources/package.json';
 let storage: storageType;
-const type: string = 'json';
-const data: pkgType|any = {
-  capacity: 50,
-  count: 1,
-  items: [{
-    weight: 10,
-    index: 1,
-    cost: 50,
-  }],
-};
 
 /** Test Storage Basic Functionality */
 test('storage', async (t) => {
-  const unsupportedType: string = 'text';
   t.throws(() => {
-    return new Storage(unsupportedType, file);
+    return new Storage(unsupportedType, existentFile);
   },
   `Unsupported Storage Type: ${unsupportedType}`,
   'it should throw in case of unsupported type');
 
-  const unsupportedExtension: string = `${file}.txt`;
   t.throws(() => {
-    return new Storage(type, unsupportedExtension);
+    return new Storage(supportedType, unsupportedExtension);
   }, `Unsupported File Extension: ${unsupportedExtension}`,
   'it should throw in case of unsupported extension');
 
-  fs.writeFileSync(file, JSON.stringify({}), 'utf-8');
-  storage = new Storage(type, file);
-  t.same(storage, {type, file, data: {}},
-      'initializing an empty storage by loading');
+  fs.writeFileSync(existentFile, JSON.stringify({}), 'utf-8');
+  storage = new Storage(supportedType, existentFile);
+  t.same(storage, {
+    type: supportedType,
+    file: existentFile,
+    data: {},
+  }, 'initializing an empty storage by loading');
 
   t.same(storage.add({}), undefined,
       'should not add an empty object');
@@ -103,15 +100,12 @@ test('storage', async (t) => {
 
 /** Test load() and save() */
 test('test load and save', async (t) => {
-  file = file.replace('.', '');
-  storage = new Storage(type, file);
+  storage = new Storage(supportedType, inexistentFile);
   t.throws(() => {
     storage.load();
-  }, `Unable to Read from ${file}:` +
+  }, `Unable to Read from ${inexistentFile}:` +
   ` Error: ENOENT: no such file or directory,` +
-  ` open '${file}'`, 'throws on unreadable file');
-
-  storage.save();
+  ` open '${inexistentFile}'`, 'throws on unreadable file');
 }).catch(threw);
 
 /**
